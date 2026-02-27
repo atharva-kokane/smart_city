@@ -1,13 +1,46 @@
 "use client"
 
-import { AlertTriangle, Truck } from "lucide-react"
+import { useEffect, useState } from "react"
+import { AlertTriangle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { binData } from "@/lib/data"
+import { supabase } from "@/lib/supabaseClient"
 
 export function WasteAlertPanel() {
-  const criticalBins = binData.filter((b) => b.fillLevel >= 85)
+
+  const [criticalBins, setCriticalBins] = useState([])
+
+  useEffect(() => {
+
+    fetchCriticalBins()
+
+    // realtime updates
+    const channel = supabase
+      .channel("critical_bins_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "smart_bins" },
+        fetchCriticalBins
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+
+  }, [])
+
+  async function fetchCriticalBins() {
+
+    const { data, error } = await supabase
+      .from("smart_bins")
+      .select("*")
+      .eq("status", "Critical") // only critical bins
+      .order("fill_level", { ascending: false })
+
+    if (!error && data) {
+      setCriticalBins(data)
+    }
+
+  }
 
   return (
     <Card className="border-destructive/20">
@@ -19,29 +52,46 @@ export function WasteAlertPanel() {
           </CardTitle>
         </div>
       </CardHeader>
+
       <CardContent>
-        <div className="flex flex-col gap-3">
-          {criticalBins.map((bin) => (
-            <div
-              key={bin.id}
-              className="flex flex-col gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-foreground">{bin.id}</span>
-                <Badge className="bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0">
-                  {bin.fillLevel}% Full
-                </Badge>
-              </div>
-              <p className="text-[11px] text-muted-foreground">{bin.location}</p>
-              <p className="text-[10px] text-muted-foreground">Updated {bin.lastUpdated}</p>
-              <Button variant="outline" size="sm" className="h-7 text-xs">
-                <Truck className="mr-1 size-3" />
-                Dispatch Collection
-              </Button>
-            </div>
-          ))}
+
+  <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-1">
+
+    {criticalBins.map((bin) => (
+
+      <div
+        key={bin.bin_id}
+        className="flex flex-col gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3"
+      >
+
+        <div className="flex items-center justify-between">
+
+          <span className="text-xs font-semibold">
+            {bin.bin_id}
+          </span>
+
+          <Badge className="bg-destructive text-[10px]">
+            {bin.fill_level}% Full
+          </Badge>
+
         </div>
-      </CardContent>
+
+        <p className="text-[11px] text-muted-foreground">
+          {bin.location}
+        </p>
+
+        <p className="text-[10px] text-muted-foreground">
+          Updated {new Date(bin.last_updated).toLocaleTimeString()}
+        </p>
+
+      </div>
+
+    ))}
+
+  </div>
+
+</CardContent>
+
     </Card>
   )
 }

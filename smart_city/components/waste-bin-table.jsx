@@ -12,7 +12,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
-import { binData } from "@/lib/data"
+import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabaseClient"
 
 function StatusBadge({ status }) {
   const styles = {
@@ -29,6 +30,40 @@ function StatusBadge({ status }) {
 }
 
 export function WasteBinTable() {
+
+  const [bins, setBins] = useState([])
+
+  useEffect(() => {
+    fetchBins()
+
+    const channel = supabase
+      .channel("smart_bins_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "smart_bins" },
+        () => {
+          fetchBins()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+
+  }, [])
+
+  async function fetchBins() {
+    const { data, error } = await supabase
+      .from("smart_bins")
+      .select("*")
+      .order("bin_id")
+
+    if (!error) {
+      setBins(data)
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -47,35 +82,20 @@ export function WasteBinTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {binData.map((bin) => (
-              <TableRow key={bin.id}>
-                <TableCell className="font-medium text-foreground">{bin.id}</TableCell>
-                <TableCell className="text-muted-foreground">{bin.location}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-16 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className={`h-full rounded-full ${
-                          bin.fillLevel >= 85
-                            ? "bg-destructive"
-                            : bin.fillLevel >= 60
-                            ? "bg-[var(--warning)]"
-                            : "bg-accent"
-                        }`}
-                        style={{ width: `${bin.fillLevel}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-foreground">{bin.fillLevel}%</span>
-                  </div>
-                </TableCell>
+            {bins.map((bin) => (
+              <TableRow key={bin.bin_id}>
+                <TableCell>{bin.bin_id}</TableCell>
+                <TableCell>{bin.location}</TableCell>
+                <TableCell>{bin.fill_level}%</TableCell>
                 <TableCell>
                   <StatusBadge status={bin.status} />
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">{bin.lastUpdated}</TableCell>
+                <TableCell>
+                  {new Date(bin.last_updated).toLocaleTimeString()}
+                </TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" className="size-7">
-                    <Eye className="size-3.5 text-muted-foreground" />
-                    <span className="sr-only">View bin {bin.id}</span>
+                    <Eye className="size-3.5" />
                   </Button>
                 </TableCell>
               </TableRow>
