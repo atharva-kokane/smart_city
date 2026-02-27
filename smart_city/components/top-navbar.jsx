@@ -40,18 +40,11 @@ export function TopNavbar() {
       <Separator orientation="vertical" className="h-5" />
       <div className="flex items-center gap-2">
         <MapPin className="size-4 text-primary" />
-        <span className="text-sm font-medium text-foreground">Metro City</span>
+        <span className="text-sm font-medium text-foreground">Pune City</span>
       </div>
       <div className="ml-auto flex items-center gap-4">
         <LiveClock />
-        <Separator orientation="vertical" className="h-5" />
-        <Button variant="ghost" size="icon" className="relative size-8">
-          <Bell className="size-4 text-muted-foreground" />
-          <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-            3
-          </span>
-          <span className="sr-only">Notifications</span>
-        </Button>
+        
         <Separator orientation="vertical" className="h-5" />
         <div className="flex items-center gap-2">
           <div className="flex size-8 items-center justify-center rounded-full bg-primary">

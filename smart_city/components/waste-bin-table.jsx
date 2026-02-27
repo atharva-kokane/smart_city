@@ -78,7 +78,7 @@ export function WasteBinTable() {
               <TableHead>Fill Level</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Last Updated</TableHead>
-              <TableHead className="text-right">Action</TableHead>
+              
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -93,11 +93,7 @@ export function WasteBinTable() {
                 <TableCell>
                   {new Date(bin.last_updated).toLocaleTimeString()}
                 </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" className="size-7">
-                    <Eye className="size-3.5" />
-                  </Button>
-                </TableCell>
+               
               </TableRow>
             ))}
           </TableBody>
